@@ -5,46 +5,92 @@
     <title>Quill Electron Editor</title>
     <link href="third-party/quill/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.css" integrity="sha384-TEMocfGvRuD1rIAacqrknm5BQZ7W7uWitoih+jMNFXQIbNl16bO8OZmylH/Vi/Ei" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <style>
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        li {
+            float: left;
+        }
+
+        li a {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 11px 16px;
+            text-decoration: none;
+        }
+
+        li a:hover:not(.active) {
+            background-color: #111;
+        }
+
+        .ql-toolbar.ql-snow {
+            background: white;
+        }
+    </style>
 </head>
-<body style="padding: 20px 40px;">
-    <div id="editor" style="width: 100%; min-height: 1000px;">
+<body style="padding: 0px; margin: 0px; background: lightgrey;">
+    <div style="width: 100%; height: 40px; background: grey;">
+        <ul>
+            <li><a id="save-file" href="#">Save</a></li>
+            <li><a id="open-file" href="#">Open</a></li>
+        </ul>
+    </div>
+    <div style="height">
+        <div id="editor" style="width: 960px; min-height: 780px; background: white; left: 50%; margin-left: -480px; margin-top: 16px;">
+        </div>
     </div>
 
     <script>
-        // You can also require other files to run in this process
         require('./renderer.js');
         window.$ = window.jQuery = require('./third-party/jquery/jquery.min.js');
     </script>
     <script src="third-party/quill/quill.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.9.0/katex.min.js" integrity="sha384-jmxIlussZWB7qCuB+PgKG1uLjjxbVVIayPJwi6cG6Zb4YKq0JIw+OMnkkEC7kYCq" crossorigin="anonymous"></script>
-    <!--<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>-->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <script>
         var editor = new Quill('#editor', {
             modules: {
-                // toolbar: '#toolbar'
-                formula: true,          // Include formula module
-                toolbar: [['formula']]  // Include button in toolbar
+                formula: true,
+                toolbar: [['formula']]
             },
             placeholder: 'start writing here...',
             theme: 'snow'
         });
 
-        console.log(editor.root.innerHTML);
-
         var ipc = require('electron').ipcRenderer;
-        ipc.once('actionReply', function(event, response){
-            // processResponse(response);
+            ipc.once('actionReply', function(event, response){
         });
+
         ipc.on('showFormula', function(event, arg) {
-            document.getElementsByClassName('ql-formula')[0].click();
+            $('.ql-formula')[0].click();
             ipc.send('invokeAction', 'formula should be shown');
         });
+
         ipc.on('getContent', function(event, arg) {
-            ipc.send('invokeAction', editor.root.innerHTML);
+            ipc.send('saveFile', editor.root.innerHTML);
         });
+
+        ipc.on('setContent', function(event, arg) {
+            editor.root.innerHTML = arg;
+        });
+
         $(function () {
-            ipc.send('invokeAction', 'hello from jquery');
+            $('#save-file').click(function(e) {
+               e.preventDefault();
+               ipc.send('saveFile', editor.root.innerHTML);
+            });
+
+            $('#open-file').click(function(e) {
+                e.preventDefault();
+                ipc.send('openFile', editor.root.innerHTML);
+            });
         });
     </script>
 </body>

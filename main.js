@@ -1,44 +1,71 @@
-const electron = require('electron')
-// Module to control application life.
+const electron = require('electron');
+
 const app = electron.app
-// Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
 
 const path = require('path')
 const url = require('url')
+const fs = require('fs');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 
 function createWindow() {
-    // Create the browser window.
-    mainWindow = new BrowserWindow({width: 800, height: 600})
-
-    // and load the index.html of the app.
+    mainWindow = new BrowserWindow({width: 1200, height: 700})
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'index.html'),
         protocol: 'file:',
         slashes: true
     }));
 
-    const electronLocalshortcut = require('electron-localshortcut');
+    const electronLocalShortcut = require('electron-localshortcut');
+    const dialog = require('electron').dialog;
+    var currentFile = null;
 
-    electronLocalshortcut.register(mainWindow, 'Ctrl+F', function() {
+    electronLocalShortcut.register(mainWindow, 'Ctrl+F', function () {
         mainWindow.webContents.send('showFormula', 5);
     });
 
-    electronLocalshortcut.register(mainWindow, 'Ctrl+S', function() {
+    electronLocalShortcut.register(mainWindow, 'Ctrl+S', function () {
         mainWindow.webContents.send('getContent', 5);
     });
 
+    electronLocalShortcut.register(mainWindow, 'Ctrl+O', function () {
+        openFile();
+    });
+
     var ipc = require('electron').ipcMain;
-    ipc.on('invokeAction', function(event, data) {
+
+    ipc.on('invokeAction', function (event, data) {
         console.log(data);
     });
 
-    var dialog = require('electron').dialog
-    console.log(dialog.showOpenDialog({properties: ['openFile', 'openDirectory', 'multiSelections']}));
+    ipc.on('saveFile', function (event, data) {
+        if(currentFile === null) {
+            currentFile = dialog.showSaveDialog({});
+        }
+        try {
+            fs.writeFileSync(currentFile, data, 'utf-8');
+        } catch(e) {
+            alert('Failed to save the file !');
+        }
+    });
+
+    ipc.on('openFile', function(event, data) {
+       openFile();
+    });
+
+    function openFile() {
+        dialog.showOpenDialog(function(fileNames) {
+            if (fileNames === undefined) return;
+            currentFile = fileNames[0];
+            fs.readFile(currentFile, 'utf-8', function (err, data) {
+                mainWindow.webContents.send('setContent', data);
+            });
+        });
+    }
+
 
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()
