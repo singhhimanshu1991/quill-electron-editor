@@ -1,23 +1,56 @@
 {
   "name": "quill-electron-editor",
   "version": "1.0.0",
+  "license": "CC0-1.0",
   "description": "A minimal Electron application",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "postinstall": "install-app-deps",
+    "start": "npm install && electron ./app",
+    "pack": "build --dir",
+    "dist": "build"
+  },
+  "build": {
+    "appId": "quill-electron-editor",
+    "dmg": {
+      "contents": [
+        {
+          "x": 110,
+          "y": 150
+        },
+        {
+          "x": 240,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "win": {
+      "target": "squirrel",
+      "icon": "build/icon.ico"
+    }
   },
   "repository": "https://github.com/singhhimanshu1991/quill-electron-editor",
   "keywords": [
+    "Quill",
     "Electron",
-    "quick",
-    "start",
-    "tutorial",
-    "demo"
+    "Mathematics",
+    "Editor"
   ],
   "author": "GitHub",
-  "license": "CC0-1.0",
+  "dependencies": {
+    "electron-localshortcut": "^3.1.0"
+  },
   "devDependencies": {
     "electron": "~1.7.8",
+    "electron-builder": "^20.2.0",
     "electron-localshortcut": "^3.1.0"
   }
 }

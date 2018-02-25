@@ -12,7 +12,7 @@ const fs = require('fs');
 let mainWindow
 
 function createWindow() {
-    mainWindow = new BrowserWindow({width: 1200, height: 700})
+    mainWindow = new BrowserWindow({width: 1260, height: 700})
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'index.html'),
         protocol: 'file:',
@@ -22,6 +22,7 @@ function createWindow() {
     const electronLocalShortcut = require('electron-localshortcut');
     const dialog = require('electron').dialog;
     var currentFile = null;
+
 
     electronLocalShortcut.register(mainWindow, 'Ctrl+F', function () {
         mainWindow.webContents.send('showFormula', 5);
@@ -35,40 +36,111 @@ function createWindow() {
         openFile();
     });
 
+    electronLocalShortcut.register(mainWindow, 'Ctrl+N', function () {
+        mainWindow.webContents.send('getContent', 5);
+    });
+
     var ipc = require('electron').ipcMain;
 
+    var contentChanged = false;
+    ipc.on('contentChanged', function (event, data) {
+        // console.log('content changed');
+        contentChanged = true;
+    });
+
     ipc.on('invokeAction', function (event, data) {
-        console.log(data);
+        console.log(data, true);
+    });
+
+    ipc.on('newFile', function(event, data) {
+        // console.log('new file called');
+        saveFile(data, true);
+    });
+
+    ipc.on('openFile', function(event, data) {
+        openFile();
     });
 
     ipc.on('saveFile', function (event, data) {
+        saveFile(data, false);
+    });
+
+    ipc.on('openMathHelp', function (event, data) {
+        openMathHelpWindow();
+    });
+
+    ipc.on('openHelp', function (event, data) {
+        openHelpWindow();
+    });
+
+    function saveFile(data, createNewFile = false) {
+        if(contentChanged === false && createNewFile) {
+            mainWindow.webContents.send('setTitle', 'Untitled');
+            return;
+        }
         if(currentFile === null) {
             currentFile = dialog.showSaveDialog({});
         }
         try {
             fs.writeFileSync(currentFile, data, 'utf-8');
+            var filenameInTitle = currentFile.substring(currentFile.lastIndexOf('/')+1);
+            contentChanged = false;
+            if(createNewFile) {
+                filenameInTitle = 'Untitled';
+                currentFile = null;
+            }
+            mainWindow.webContents.send('setTitle', filenameInTitle);
         } catch(e) {
             alert('Failed to save the file !');
         }
-    });
-
-    ipc.on('openFile', function(event, data) {
-       openFile();
-    });
+    }
 
     function openFile() {
         dialog.showOpenDialog(function(fileNames) {
             if (fileNames === undefined) return;
             currentFile = fileNames[0];
+            var filenameInTitle = currentFile.substring(currentFile.lastIndexOf('/')+1);
+            mainWindow.webContents.send('setTitle', filenameInTitle);
             fs.readFile(currentFile, 'utf-8', function (err, data) {
                 mainWindow.webContents.send('setContent', data);
             });
         });
     }
 
+    var mathHelpWindow = null;
 
-    // Open the DevTools.
-    // mainWindow.webContents.openDevTools()
+    function openMathHelpWindow() {
+        if (mathHelpWindow) {
+            mathHelpWindow.focus()
+            return;
+        }
+
+        mathHelpWindow = new BrowserWindow({height: 700, width: 1260, title: "Math Help"});
+
+        mathHelpWindow.loadURL(url.format({
+            pathname: path.join(__dirname, 'help/Function Support in KaTeX.htm'),
+            protocol: 'file:',
+            slashes: true
+        }));
+
+        mathHelpWindow.on('closed', function () {
+            mathHelpWindow = null;
+        });
+    }
+
+    function openHelpWindow() {
+        var helpWindow = new BrowserWindow({height: 400, width: 400, title: "Help", parent: mainWindow});
+        helpWindow.setAlwaysOnTop(true);
+        helpWindow.loadURL(url.format({
+            pathname: path.join(__dirname, 'help/help.html'),
+            protocol: 'file:',
+            slashes: true
+        }));
+
+        helpWindow.on('closed', function () {
+            helpWindow = null;
+        });
+    }
 
     // Emitted when the window is closed.
     mainWindow.on('closed', function () {
