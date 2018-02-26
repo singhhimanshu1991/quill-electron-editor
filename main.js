@@ -41,6 +41,10 @@ function createWindow() {
         mainWindow.webContents.send('getContent', true);
     });
 
+    electronLocalShortcut.register(mainWindow, 'CmdOrCtrl+D', function () {
+        mainWindow.webContents.openDevTools();
+    });
+
     var ipc = require('electron').ipcMain;
 
     var contentChanged = false;
