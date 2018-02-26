@@ -1,4 +1,5 @@
 const electron = require('electron');
+const {Menu} = require('electron');
 
 const app = electron.app
 const BrowserWindow = electron.BrowserWindow
@@ -24,20 +25,20 @@ function createWindow() {
     var currentFile = null;
 
 
-    electronLocalShortcut.register(mainWindow, 'Ctrl+F', function () {
+    electronLocalShortcut.register(mainWindow, 'CmdOrCtrl+F', function () {
         mainWindow.webContents.send('showFormula', 5);
     });
 
-    electronLocalShortcut.register(mainWindow, 'Ctrl+S', function () {
-        mainWindow.webContents.send('getContent', 5);
+    electronLocalShortcut.register(mainWindow, 'CmdOrCtrl+S', function () {
+        mainWindow.webContents.send('getContent', false);
     });
 
-    electronLocalShortcut.register(mainWindow, 'Ctrl+O', function () {
+    electronLocalShortcut.register(mainWindow, 'CmdOrCtrl+O', function () {
         openFile();
     });
 
-    electronLocalShortcut.register(mainWindow, 'Ctrl+N', function () {
-        mainWindow.webContents.send('getContent', 5);
+    electronLocalShortcut.register(mainWindow, 'CmdOrCtrl+N', function () {
+        mainWindow.webContents.send('getContent', true);
     });
 
     var ipc = require('electron').ipcMain;
@@ -80,6 +81,10 @@ function createWindow() {
         }
         if(currentFile === null) {
             currentFile = dialog.showSaveDialog({});
+            if(!currentFile) {
+                currentFile = null;
+                return;
+            }
         }
         try {
             fs.writeFileSync(currentFile, data, 'utf-8');
@@ -91,7 +96,7 @@ function createWindow() {
             }
             mainWindow.webContents.send('setTitle', filenameInTitle);
         } catch(e) {
-            alert('Failed to save the file !');
+            console.log('Failed to save the file !');
         }
     }
 
@@ -149,6 +154,28 @@ function createWindow() {
         // when you should delete the corresponding element.
         mainWindow = null
     })
+
+    var template = [{
+        label: "Application",
+        submenu: [
+            { label: "About Application", selector: "orderFrontStandardAboutPanel:" },
+            { type: "separator" },
+            { label: "Quit", accelerator: "Command+Q", click: function() { app.quit(); }}
+        ]}, {
+        label: "Edit",
+        submenu: [
+            { label: "Undo", accelerator: "CmdOrCtrl+Z", selector: "undo:" },
+            { label: "Redo", accelerator: "Shift+CmdOrCtrl+Z", selector: "redo:" },
+            { type: "separator" },
+            { label: "Cut", accelerator: "CmdOrCtrl+X", selector: "cut:" },
+            { label: "Copy", accelerator: "CmdOrCtrl+C", selector: "copy:" },
+            { label: "Paste", accelerator: "CmdOrCtrl+V", selector: "paste:" },
+            { label: "Select All", accelerator: "CmdOrCtrl+A", selector: "selectAll:" }
+        ]}
+    ];
+
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    // Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
 // This method will be called when Electron has finished

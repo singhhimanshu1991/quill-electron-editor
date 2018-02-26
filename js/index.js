@@ -44,7 +44,11 @@ ipc.on('showFormula', function (event, arg) {
 });
 
 ipc.on('getContent', function (event, arg) {
-    ipc.send('saveFile', editor.root.innerHTML);
+    if(arg) {
+        $('#new-file').click();
+    } else {
+        ipc.send('saveFile', editor.root.innerHTML);
+    }
 });
 
 ipc.on('setContent', function (event, arg) {

@@ -27,14 +27,14 @@
       ]
     },
     "linux": {
+      "category": "Utility",
       "target": [
         "AppImage",
         "deb"
       ]
     },
     "win": {
-      "target": "squirrel",
-      "icon": "build/icon.ico"
+      "target": "NSIS"
     }
   },
   "repository": "https://github.com/singhhimanshu1991/quill-electron-editor",
